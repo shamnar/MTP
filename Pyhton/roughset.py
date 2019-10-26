@@ -7,7 +7,7 @@ Created on Thu Sep 19 11:57:00 2019
 """
 import cv2
 import numpy as np
-import math
+import sys
 
 def has_image(arr):
     if (np.count_nonzero(arr))==25:
@@ -74,8 +74,10 @@ def start_marking(ri, ci, direction, grid_size, index):
     ci_begin=ci
     [ri_start,ri,ri_end,ci_start,ci,ci_end]=update_window_pos(direction, ri,ci, grid_size)
     [ltwin,rtwin,lbwin,rbwin]=update_window(ri_start,ri,ri_end,ci_start,ci,ci_end)
+    loopcount=-1
     while (not(ri_begin==ri and ci_begin==ci)):
-        num=convert_win_to_number(ltwin,rtwin,lbwin,rbwin)
+        loopcount+=1
+        num=convert_win_to_number(ltwin,rtwin,lbwin,rbwin)  
         if (num==12 or num==3): #image in 2 boxes
             points.append([ci_start,ri,ci_end,ri])
             vflag[ri,ci]=1
@@ -158,13 +160,51 @@ def start_marking(ri, ci, direction, grid_size, index):
             vflag[ri,ci]=1
             if (direction==0):
                 direction=3
-        
+
+        elif (num==9):
+            
+            wpoints[index].append([ci,ri])
+            vflag[ri,ci]=1
+            if (direction==2):
+                points.append([ci,ri_start,ci,ri])
+                points.append([ci,ri,ci_end,ri])
+                direction=0
+            elif (direction==3):
+                points.append([ci_start,ri,ci,ri])
+                points.append([ci,ri,ci,ri_end])
+                direction=1
+            else:
+                sys.exit(0)
+
+        elif (num==6):
+            wpoints[index].append([ci,ri])
+            vflag[ri,ci]=1
+            if (direction==1):
+                points.append([ci,ri,ci_end,ri])
+                points.append([ci,ri,ci,ri_end])
+                direction=2
+            elif (direction==0):
+                points.append([ci_start,ri,ci,ri])
+                points.append([ci,ri,ci,ri_start])
+                direction=3
+            else:
+                sys.exit(0)
+
+        else:
+            sys.exit(0)
         [ri_start,ri,ri_end,ci_start,ci,ci_end]=update_window_pos(direction, ri,ci, grid_size)
         [ltwin,rtwin,lbwin,rbwin]=update_window(ri_start,ri,ri_end,ci_start,ci,ci_end)
     return
 
-img=cv2.imread("img_bw_sb.png",0) 
+arg1= sys.argv[1]
+fname="../new_testset/"
+fname=fname+arg1+".png"
+img=cv2.imread(fname,0)
+img=cv2.resize(img,(128,128), interpolation = cv2.INTER_AREA)
+(thresh, img_bw) = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)  
 #add 10 pixel border-- start
+img=img_bw
+
 img_margin= np.full((150, 150), 255)
 vflag=np.full((150, 150), 0)
 vflag[0]=1
@@ -223,6 +263,9 @@ while (crow_index<rowlen-grid_size):
 for el in points:
     img_margin = cv2.line(img_margin, (el[0],el[1]), (el[2],el[3]), (100,0,0), 1) 
 
-cv2.imwrite("test.png", img_margin) 
+oname="output_img/"+arg1+".png"
+cv2.imwrite(oname, img_margin) 
 for el in wpoints:
     print (el)
+
+
