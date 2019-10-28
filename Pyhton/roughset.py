@@ -14,7 +14,9 @@ from os.path import isfile, join
 ##############################################################################
 #All user changing variavle goes here
 grid_size=4
-mypath = "/home/user/Documents/MTP/Images/MyEnData"
+in_img_folder = "/home/user/Documents/MTP/Images/MyEnData"
+out_img_folder = in_img_folder + "/output"
+out_cord_folder =  in_img_folder + "/coordinates"
 ##############################################################################
 
 def has_image(arr):
@@ -209,7 +211,7 @@ def start_marking(ri, ci, direction, grid_size, index):
 #fname="../new_testset/"
 #fname=fname+arg1+".png"
     
-onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f)) and f.endswith(".png")]
+onlyfiles = [f for f in listdir(in_img_folder) if isfile(join(in_img_folder, f)) and f.endswith(".png")]
 print (len(onlyfiles))
 for i in range(len(onlyfiles)):
 #for i in range(1):
@@ -217,7 +219,7 @@ for i in range(len(onlyfiles)):
     fname_mod = fname[0:-4]
     print (str(i) + ": processing " + fname + " file")
     fname = fname.strip('\n')
-    img=cv2.imread(mypath + "/"+fname,0)
+    img=cv2.imread(in_img_folder + "/"+fname,0)
     if (img is not None):
         print ("read sucesss")
     else:
@@ -276,8 +278,8 @@ for i in range(len(onlyfiles)):
         img_margin = cv2.line(img_margin, (el[0],el[1]), (el[2],el[3]), (100,0,0), 1) 
 
 #oname="output_img/"+arg1+".png"
-    oname_img = mypath +"/output/"+ fname
-    oname_cord= mypath +"/coordinates/"+ fname_mod + ".txt"
+    oname_img = out_img_folder + "/"+ fname
+    oname_cord= out_cord_folder +"/"+ fname_mod + ".txt"
     cv2.imwrite(oname_img, img_margin)
     file_to_write = open(oname_cord, 'w') 
     for el in wpoints:
