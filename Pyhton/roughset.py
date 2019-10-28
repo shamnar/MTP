@@ -8,15 +8,23 @@ Created on Thu Sep 19 11:57:00 2019
 import cv2
 import numpy as np
 import sys
+from os import listdir
+from os.path import isfile, join
+
+##############################################################################
+#All user changing variavle goes here
+grid_size=4
+mypath = "/home/user/Documents/MTP/Images/MyEnData"
+##############################################################################
 
 def has_image(arr):
-    if (np.count_nonzero(arr))==25:
+    if (np.count_nonzero(arr))==(grid_size*grid_size):
         return False
     else:
         return True
 
 def has_image_bin(arr):
-    if (np.count_nonzero(arr))==25:
+    if (np.count_nonzero(arr))==(grid_size*grid_size):
         return 0
     else:
         return 1
@@ -196,76 +204,86 @@ def start_marking(ri, ci, direction, grid_size, index):
         [ltwin,rtwin,lbwin,rbwin]=update_window(ri_start,ri,ri_end,ci_start,ci,ci_end)
     return
 
-arg1= sys.argv[1]
-fname="../new_testset/"
-fname=fname+arg1+".png"
-img=cv2.imread(fname,0)
-img=cv2.resize(img,(128,128), interpolation = cv2.INTER_AREA)
-(thresh, img_bw) = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)  
-#add 10 pixel border-- start
-img=img_bw
 
-img_margin= np.full((150, 150), 255)
-vflag=np.full((150, 150), 0)
-vflag[0]=1
-vflag[149]=1
+#arg1= sys.argv[1]
+#fname="../new_testset/"
+#fname=fname+arg1+".png"
+    
+onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f)) and f.endswith(".png")]
+print (len(onlyfiles))
+for i in range(len(onlyfiles)):
+#for i in range(1):
+    fname = onlyfiles[i]
+    fname_mod = fname[0:-4]
+    print (str(i) + ": processing " + fname + " file")
+    fname = fname.strip('\n')
+    img=cv2.imread(mypath + "/"+fname,0)
+    if (img is not None):
+        print ("read sucesss")
+    else:
+        print ("error in reading")
+        break
+    (thresh, img_margin) = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)  
+    [rowlen, collen]=img_margin.shape
+    vflag=np.full((rowlen, collen), 0)
+    vflag[0]=1
+    vflag[rowlen-1]=1
 
-x_offset=10
-y_offset=10
-img_margin[x_offset:img.shape[0]+x_offset,y_offset:img.shape[1]+y_offset] = img
-#add 10 pixel border--end
+    crow_index=0
+    points=list()
+    wpoints=list()
+    count=0
 
-[rowlen, collen]=img_margin.shape
-grid_size=5
-crow_index=0
-points=list()
-wpoints=list()
-count=0
-
-while (crow_index<rowlen-grid_size):
-    ccol_index=0
-    while(ccol_index<collen-grid_size):
-        ri1=crow_index+grid_size
-        ci1=ccol_index+grid_size
-        ri2=ri1+grid_size
-        ci2=ci1+grid_size
-        ltwin=img_margin[crow_index:ri1,ccol_index:ci1]
-        rtwin=img_margin[crow_index:ri1, ci1:ci2]
-        lbwin=img_margin[ri1:ri2,ccol_index:ci1]
-        rbwin=img_margin[ri1:ri2, ci1:ci2]
-        num=convert_win_to_number(ltwin,rtwin,lbwin,rbwin)
-        if (num==0 or num==15):
-            vflag[ri1,ci1]=1
-        elif (num>0):
-            if (num==1 and vflag[ri1,ci1]!=1):
+    while (crow_index<rowlen-grid_size):
+        ccol_index=0
+        while(ccol_index<collen-grid_size):
+            ri1=crow_index+grid_size
+            ci1=ccol_index+grid_size
+            ri2=ri1+grid_size
+            ci2=ci1+grid_size
+            ltwin=img_margin[crow_index:ri1,ccol_index:ci1]
+            rtwin=img_margin[crow_index:ri1, ci1:ci2]
+            lbwin=img_margin[ri1:ri2,ccol_index:ci1]
+            rbwin=img_margin[ri1:ri2, ci1:ci2]
+            num=convert_win_to_number(ltwin,rtwin,lbwin,rbwin)
+            if (num==0 or num==15):
                 vflag[ri1,ci1]=1
-                direction=0
-                img_pos=1
-                points.append([ci1,ri1,ci2,ri1])
-                points.append([ci1,ri1,ci1,ri2])
-                wpoints.append([])
-                wpoints[count].append([ci1,ri1])
-                start_marking(ri1,ci1,direction,grid_size, count)
-                count+=1
-            elif (num==14 and vflag[ri1,ci1]!=1):
-                vflag[ri1,ci1]=1
-                direction=2
-                img_pos=2
-                points.append([ci1,ri1,ci2,ri1])
-                points.append([ci1,ri1,ci1,ri2])
-                wpoints.append([])
-                wpoints[count].append([ci1,ri1])
-                start_marking(ri1,ci1,direction,grid_size, count)
-                count+=1
-        ccol_index=ci1
-    crow_index=ri1
+            elif (num>0):
+                if (num==1 and vflag[ri1,ci1]!=1):
+                    vflag[ri1,ci1]=1
+                    direction=0
+                    img_pos=1
+                    points.append([ci1,ri1,ci2,ri1])
+                    points.append([ci1,ri1,ci1,ri2])
+                    wpoints.append([])
+                    wpoints[count].append([ci1,ri1])
+                    start_marking(ri1,ci1,direction,grid_size, count)
+                    count+=1
+                elif (num==14 and vflag[ri1,ci1]!=1):
+                    vflag[ri1,ci1]=1
+                    direction=2
+                    img_pos=2
+                    points.append([ci1,ri1,ci2,ri1])
+                    points.append([ci1,ri1,ci1,ri2])
+                    wpoints.append([])
+                    wpoints[count].append([ci1,ri1])
+                    start_marking(ri1,ci1,direction,grid_size, count)
+                    count+=1
+            ccol_index=ci1
+        crow_index=ri1
 
-for el in points:
-    img_margin = cv2.line(img_margin, (el[0],el[1]), (el[2],el[3]), (100,0,0), 1) 
+    for el in points:
+        img_margin = cv2.line(img_margin, (el[0],el[1]), (el[2],el[3]), (100,0,0), 1) 
 
-oname="output_img/"+arg1+".png"
-cv2.imwrite(oname, img_margin) 
-for el in wpoints:
-    print (el)
+#oname="output_img/"+arg1+".png"
+    oname_img = mypath +"/output/"+ fname
+    oname_cord= mypath +"/coordinates/"+ fname_mod + ".txt"
+    cv2.imwrite(oname_img, img_margin)
+    file_to_write = open(oname_cord, 'w') 
+    for el in wpoints:
+        print(el, file = file_to_write)
+    file_to_write.close() 
+    print ("write coordinates over")
+
 
 
