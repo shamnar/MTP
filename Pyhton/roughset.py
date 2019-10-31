@@ -14,6 +14,7 @@ from os.path import isfile, join
 ##############################################################################
 #All user changing variavle goes here
 grid_size=4
+
 in_img_folder = "/home/user/Documents/MTP/Images/MyEnData"
 out_img_folder = in_img_folder + "/output"
 out_cord_folder =  in_img_folder + "/coordinates"
@@ -275,7 +276,7 @@ for i in range(len(onlyfiles)):
         crow_index=ri1
 
     for el in points:
-        img_margin = cv2.line(img_margin, (el[0],el[1]), (el[2],el[3]), (100,0,0), 1) 
+        img_margin = cv2.line(img_margin, (el[0],el[1]), (el[2],el[3]), (100,0,0), 3) 
 
 #oname="output_img/"+arg1+".png"
     oname_img = out_img_folder + "/"+ fname
