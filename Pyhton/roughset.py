@@ -15,7 +15,7 @@ from os.path import isfile, join
 #All user changing variavle goes here
 grid_size=4
 
-in_img_folder = "/home/user/Documents/MTP/Images/MyEnData"
+in_img_folder = "/home/user/Documents/MTP/Images/FeatureImage"
 out_img_folder = in_img_folder + "/output"
 out_cord_folder =  in_img_folder + "/coordinates"
 ##############################################################################
@@ -78,7 +78,62 @@ def update_window(ri_start,ri,ri_end,ci_start,ci,ci_end):
     rbwin=img_margin[ri:ri_end, ci:ci_end]
     return([ltwin,rtwin,lbwin,rbwin])
 
+def find_euler_number(points):
+    return (2-len(points))
+    
 
+def find_top_most_point(points):
+    return (min(points, key=lambda x: x[1]))
+
+def find_bottom_most_point(points):
+    return (max(points, key=lambda x: x[1]))
+
+def find_left_most_point(points):
+    return (min(points, key=lambda x: x[0]))
+
+def find_right_most_point(points):
+    return (min(points, key=lambda x: x[0]))
+    
+def is_left(point1, point2):
+    if (point1[0]>point2[0]):
+        return True
+    else:
+        return False
+    
+def is_right(point1, point2):
+    if (point1[0]<point2[0]):
+        return True
+    else:
+        return False
+    
+def is_top(point1, point2):
+    if (point1[1]>point2[1]):
+        return True
+    else:
+        return False
+    
+def is_bottom(point1, point2):
+    if (point1[1]<point2[1]):
+        return True
+    else:
+        return False
+    
+def find_hole_positions(points):
+    if (len(points)==1):
+        return ([-1])
+    tl = points[0][0]
+    b = find_bottom_most_point(points[0])
+    mid = int((tl + b) /2)
+    for i in range(1,len(points)):
+        t= find_top_most_point(points[i])
+        b = find_bottom_most_point(points[i])
+        l = find_left_most_point(points[i])
+        r = find_right_most_point(points[i])
+        if (is_right(t1, r)==True):
+        
+        print (t)
+        print (points[i])
+    return (tl)
 
 def start_marking(ri, ci, direction, grid_size, index):
     ri_begin=ri
@@ -276,7 +331,7 @@ for i in range(len(onlyfiles)):
         crow_index=ri1
 
     for el in points:
-        img_margin = cv2.line(img_margin, (el[0],el[1]), (el[2],el[3]), (100,0,0), 3) 
+        img_margin = cv2.line(img_margin, (el[0],el[1]), (el[2],el[3]), (100,0,0), 1) 
 
 #oname="output_img/"+arg1+".png"
     oname_img = out_img_folder + "/"+ fname
@@ -287,6 +342,9 @@ for i in range(len(onlyfiles)):
         print(el, file = file_to_write)
     file_to_write.close() 
     print ("write coordinates over")
+    
+    en = find_euler_number(wpoints)
+    hp = find_hole_positions(wpoints)
 
 
 
