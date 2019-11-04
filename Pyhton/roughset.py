@@ -15,7 +15,7 @@ from os.path import isfile, join
 #All user changing variavle goes here
 grid_size=4
 
-in_img_folder = "/home/user/Documents/MTP/Images/FeatureImage"
+in_img_folder = "/Users/shamnarpgmail.com/Downloads/ExperimentData/proj/test"
 out_img_folder = in_img_folder + "/output"
 out_cord_folder =  in_img_folder + "/coordinates"
 ##############################################################################
@@ -92,7 +92,7 @@ def find_left_most_point(points):
     return (min(points, key=lambda x: x[0]))
 
 def find_right_most_point(points):
-    return (min(points, key=lambda x: x[0]))
+    return (max(points, key=lambda x: x[0]))
     
 def is_left(point1, point2):
     if (point1[0]>point2[0]):
@@ -121,19 +121,95 @@ def is_bottom(point1, point2):
 def find_hole_positions(points):
     if (len(points)==1):
         return ([-1])
+    hps=[]
+    hp = 0
     tl = points[0][0]
     b = find_bottom_most_point(points[0])
-    mid = int((tl + b) /2)
+    mid = [0,int((tl[1] + b[1]) /2)]
     for i in range(1,len(points)):
+        hp = 0
         t= find_top_most_point(points[i])
         b = find_bottom_most_point(points[i])
         l = find_left_most_point(points[i])
         r = find_right_most_point(points[i])
-        if (is_right(t1, r)==True):
+        if (is_left(tl, l)==True):
+            if (is_top(mid,t)==True):
+                hp= -1
+            else:
+                hp= -2
+        elif (is_right(tl,r)==True):
+            if (is_top(mid,t)==True):
+                hp= +1
+            else:
+                hp= +2
+        else:
+            hp=100
+        hps.append(hp)
+    return (hps)
+
+def is_line_horizontal(line):
+    if (line[1]==line[3]):
+        return True
+    else:
+        return False
+
+def find_edge_ratio(box):
+    vlen=0
+    hlen=0
+    ratio=0.0
+    for line in box:
+        if (is_line_horizontal(line)==True):
+            hlen+=abs(line[0]-line[2])
+        else:
+            vlen+=abs(line[1]-line[3])
+
+    if (float(vlen/hlen)>0.8 and float(vlen/hlen)<1.2):
+        return (1)
+    elif (float(vlen/hlen)<0.8):
+        return (0.5)
+    else:
+        return 2
+
+
+
+def find_vdc(box):
+    vc=0
+    for i in range(0,len(box)-2):
+        line1=box[i]
+        line2=box[i+1]
+        line3=box[i+2]
         
-        print (t)
-        print (points[i])
-    return (tl)
+        p1x=line1[0]
+        p1y=line1[1]
+        p2x=line1[2]
+        p2y=line1[3]
+
+        p3x=line2[0]
+        p3y=line2[1]
+        p4x=line2[2]
+        p4y=line2[3]
+
+        p5x=line3[0]
+        p5y=line3[1]
+        p6x=line3[2]
+        p6y=line3[3]
+
+        if (is_line_horizontal(line1)==False and is_line_horizontal(line2)==True and is_line_horizontal(line3)==False):
+            t1=find_top_most_point([[p1x,p1y],[p2x,p2y]])
+            t2=find_top_most_point([[p3x,p3y],[p4x,p4y]])
+            t3=find_top_most_point([[p5x,p5y],[p6x,p6y]])
+
+            b1=find_bottom_most_point([[p1x,p1y],[p2x,p2y]])
+            b2=find_bottom_most_point([[p3x,p3y],[p4x,p4y]])
+            b3=find_bottom_most_point([[p5x,p5y],[p6x,p6y]])
+            if (t1==t2 and t2==t3):
+                vc+=1
+            elif (b1==b2 and b2==b3):
+                vc+=1
+            else:
+                continue
+    
+    return (vc)
 
 def start_marking(ri, ci, direction, grid_size, index):
     ri_begin=ri
@@ -145,10 +221,12 @@ def start_marking(ri, ci, direction, grid_size, index):
         loopcount+=1
         num=convert_win_to_number(ltwin,rtwin,lbwin,rbwin)  
         if (num==12 or num==3): #image in 2 boxes
-            points.append([ci_start,ri,ci_end,ri])
+            if (([ci_start,ri,ci_end,ri] in points) == False):
+                points.append([ci_start,ri,ci_end,ri])
             vflag[ri,ci]=1
         elif (num==5 or num==10):
-            points.append([ci,ri_start,ci,ri_end])
+            if (([ci,ri_start,ci,ri_end] in points) == False):
+                points.append([ci,ri_start,ci,ri_end])
             vflag[ri,ci]=1
 
         elif (num==0): #if no image change direction if neccessary
@@ -164,80 +242,100 @@ def start_marking(ri, ci, direction, grid_size, index):
             vflag[ri,ci]=1
 
         elif (num==2): #image is there only in left bottom win
-            points.append([ci_start,ri,ci,ri])
-            points.append([ci,ri,ci,ri_end])
+            if (([ci_start,ri,ci,ri] in points) == False):
+                points.append([ci_start,ri,ci,ri])
+            if (([ci,ri,ci,ri_end] in points) == False):                
+                points.append([ci,ri,ci,ri_end])
+
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==0):#change direction from (left-->right) to (top-->bottom)
                 direction=2
 
         elif(num==8): #image is there only in left top win
-            points.append([ci,ri_start,ci,ri])
-            points.append([ci,ri,ci_start,ri])
+            if (([ci,ri_start,ci,ri] in points) == False):
+                points.append([ci,ri_start,ci,ri])
+            if (([ci_start,ri,ci,ri] in points) == False):
+                points.append([ci_start,ri,ci,ri])
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==2):
                 direction=1
 
         elif (num==11):
-            points.append([ci,ri_start,ci,ri])
-            points.append([ci,ri,ci_end,ri])
+            if (([ci,ri_start,ci,ri] in points) == False):
+                points.append([ci,ri_start,ci,ri])
+            if (([ci,ri,ci_end,ri] in points) == False):
+                points.append([ci,ri,ci_end,ri])
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==2):
                 direction=0
 
         elif(num==14):
-            points.append([ci,ri,ci,ri_end])
-            points.append([ci,ri,ci_end,ri])
+            if (([ci,ri,ci,ri_end] in points) == False):
+                points.append([ci,ri,ci,ri_end])
+            if (([ci,ri,ci_end,ri] in points) == False):
+                points.append([ci,ri,ci_end,ri])
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==1):
                 direction=2
 
         elif (num==4):
-            points.append([ci,ri_start,ci,ri])
-            points.append([ci,ri,ci_end,ri])
+            if (([ci,ri_start,ci,ri] in points) == False):            
+                points.append([ci,ri_start,ci,ri])
+            if (([ci,ri,ci_end,ri] in points) == False):            
+                points.append([ci,ri,ci_end,ri])
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==1):
                 direction=3
 
         elif (num==13):
-            points.append([ci_start,ri,ci,ri])
-            points.append([ci,ri,ci,ri_end])
+            if (([ci_start,ri,ci,ri] in points) == False):            
+                points.append([ci_start,ri,ci,ri])
+            if (([ci,ri,ci,ri_end] in points) == False):            
+                points.append([ci,ri,ci,ri_end])
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==3):
                 direction=1
 
         elif (num==1):
-            points.append([ci,ri,ci_end,ri])
-            points.append([ci,ri,ci,ri_end])
+            if (([ci,ri,ci_end,ri] in points) == False):            
+                points.append([ci,ri,ci_end,ri])
+            if (([ci,ri,ci,ri_end] in points) == False):                        
+                points.append([ci,ri,ci,ri_end])
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==3):
                 direction=0
 
         elif (num==7):
-            points.append([ci_start,ri,ci,ri])
-            points.append([ci,ri,ci,ri_start])
+            if (([ci_start,ri,ci,ri] in points) == False):            
+                points.append([ci_start,ri,ci,ri])
+            if (([ci,ri_start,ci,ri] in points) == False):            
+                points.append([ci,ri_start,ci,ri])
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==0):
                 direction=3
 
-        elif (num==9):
-            
+        elif (num==9):            
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==2):
-                points.append([ci,ri_start,ci,ri])
-                points.append([ci,ri,ci_end,ri])
+                if (([ci,ri_start,ci,ri] in points) == False):            
+                    points.append([ci,ri_start,ci,ri])
+                if (([ci,ri,ci_end,ri] in points) == False):            
+                    points.append([ci,ri,ci_end,ri])
                 direction=0
             elif (direction==3):
-                points.append([ci_start,ri,ci,ri])
-                points.append([ci,ri,ci,ri_end])
+                if (([ci_start,ri,ci,ri] in points) == False):                            
+                    points.append([ci_start,ri,ci,ri])
+                if (([ci,ri,ci,ri_end] in points) == False):            
+                    points.append([ci,ri,ci,ri_end])
                 direction=1
             else:
                 sys.exit(0)
@@ -246,12 +344,16 @@ def start_marking(ri, ci, direction, grid_size, index):
             wpoints[index].append([ci,ri])
             vflag[ri,ci]=1
             if (direction==1):
-                points.append([ci,ri,ci_end,ri])
-                points.append([ci,ri,ci,ri_end])
+                if (([ci,ri,ci_end,ri] in points) == False):                            
+                    points.append([ci,ri,ci_end,ri])
+                if (([ci,ri,ci,ri_end] in points) == False):                            
+                    points.append([ci,ri,ci,ri_end])
                 direction=2
             elif (direction==0):
-                points.append([ci_start,ri,ci,ri])
-                points.append([ci,ri,ci,ri_start])
+                if (([ci_start,ri,ci,ri] in points) == False):                            
+                    points.append([ci_start,ri,ci,ri])
+                if (([ci,ri_start,ci,ri] in points) == False):                            
+                    points.append([ci,ri_start,ci,ri])
                 direction=3
             else:
                 sys.exit(0)
@@ -290,6 +392,7 @@ for i in range(len(onlyfiles)):
     crow_index=0
     points=list()
     wpoints=list()
+    outer_index=0
     count=0
 
     while (crow_index<rowlen-grid_size):
@@ -311,18 +414,23 @@ for i in range(len(onlyfiles)):
                     vflag[ri1,ci1]=1
                     direction=0
                     img_pos=1
-                    points.append([ci1,ri1,ci2,ri1])
-                    points.append([ci1,ri1,ci1,ri2])
+                    if (([ci1,ri1,ci2,ri1] in points) == False):
+                        points.append([ci1,ri1,ci2,ri1])
+                    if (([ci1,ri1,ci1,ri2] in points) == False):
+                        points.append([ci1,ri1,ci1,ri2])
                     wpoints.append([])
                     wpoints[count].append([ci1,ri1])
                     start_marking(ri1,ci1,direction,grid_size, count)
+                    outer_index =  len(points)
                     count+=1
                 elif (num==14 and vflag[ri1,ci1]!=1):
                     vflag[ri1,ci1]=1
                     direction=2
                     img_pos=2
-                    points.append([ci1,ri1,ci2,ri1])
-                    points.append([ci1,ri1,ci1,ri2])
+                    if (([ci1,ri1,ci2,ri1] in points) == False):
+                        points.append([ci1,ri1,ci2,ri1])
+                    if (([ci1,ri1,ci1,ri2] in points) == False):
+                        points.append([ci1,ri1,ci1,ri2])
                     wpoints.append([])
                     wpoints[count].append([ci1,ri1])
                     start_marking(ri1,ci1,direction,grid_size, count)
@@ -342,9 +450,16 @@ for i in range(len(onlyfiles)):
         print(el, file = file_to_write)
     file_to_write.close() 
     print ("write coordinates over")
-    
+    outer_box=points[0:outer_index]
     en = find_euler_number(wpoints)
     hp = find_hole_positions(wpoints)
+    er = find_edge_ratio(outer_box)
+    vdc =  find_vdc(outer_box)
+    print ("euler number is " + str(en))
+    print ("hole positions")
+    print (hp)
+    print ("edge ratio is " + str(er))
+    print ("vdc is " + str(vdc))
 
 
 
