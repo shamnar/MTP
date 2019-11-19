@@ -120,10 +120,11 @@ def is_bottom(point1, point2):
     
 def find_hole_positions(points):
     if (len(points)==1):
-        return ([100])
+        return (['-'])
     hps=[]
     hp = 0
     tl = points[0][0]
+    #print ("top left is + str(tl))
     b = find_bottom_most_point(points[0])
     mid = [0,int((tl[1] + b[1]) /2)]
     for i in range(1,len(points)):
@@ -132,13 +133,15 @@ def find_hole_positions(points):
         b = find_bottom_most_point(points[i])
         l = find_left_most_point(points[i])
         r = find_right_most_point(points[i])
-        if (is_left(tl, l)==True):
-            if (is_top(mid,t)==True):
+        hc=[int((l[0]+r[0])/2),0]
+        vc=[0,int((t[1]+b[1])/2)]
+        if (is_left(tl, hc)==True):
+            if (is_top(mid,vc)==True):
                 hp= -1
             else:
                 hp= -2
-        elif (is_right(tl,r)==True):
-            if (is_top(mid,t)==True):
+        elif (is_right(tl,hc)==True):
+            if (is_top(mid,vc)==True):
                 hp= +1
             else:
                 hp= +2
@@ -154,6 +157,24 @@ def is_line_horizontal(line):
         return False
 
 def find_edge_ratio(box):
+    t= find_top_most_point(box)
+    b = find_bottom_most_point(box)
+    l = find_left_most_point(box)
+    r = find_right_most_point(box)
+    height=b[1]-t[1]
+    width =r[0]-l[0]
+    ratio = float(height/width)
+    er=0
+    if (ratio < .75):
+        er=0.5
+    elif (ratio > 1.25):
+        er = 2
+    else:
+        er=1
+    return ([ratio, er])
+    
+    
+    '''
     vlen=0
     hlen=0
     ratio=0.0
@@ -169,6 +190,7 @@ def find_edge_ratio(box):
         return (0.5)
     else:
         return 2
+    '''
 
 
 
@@ -370,7 +392,7 @@ def start_marking(ri, ci, direction, grid_size, index):
 #fname=fname+arg1+".png"
     
 onlyfiles = [f for f in listdir(in_img_folder) if isfile(join(in_img_folder, f)) and f.endswith(".png")]
-print (len(onlyfiles))
+print ("Total number of files" + str(len(onlyfiles)))
 for i in range(len(onlyfiles)):
 #for i in range(1):
     fname = onlyfiles[i]
@@ -456,11 +478,11 @@ for i in range(len(onlyfiles)):
     hp = find_hole_positions(wpoints)
     er = find_edge_ratio(outer_box)
     vdc =  find_vdc(outer_box)
-    print ("euler number is " + str(en))
-    print ("hole positions")
-    print (hp)
+    #print ("euler number is " + str(en))   
+    
+    #print ("hole positions")
+    #print (hp)
     print ("edge ratio is " + str(er))
-    print ("vdc is " + str(vdc))
-
+    #print ("vdc is " + str(vdc))
 
 
