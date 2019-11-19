@@ -15,7 +15,7 @@ from os.path import isfile, join
 #All user changing variavle goes here
 grid_size=4
 
-in_img_folder = "/Users/shamnarpgmail.com/Downloads/ExperimentData/proj/test"
+in_img_folder = "/home/user/Documents/MTP/Images/RSet"
 out_img_folder = in_img_folder + "/output"
 out_cord_folder =  in_img_folder + "/coordinates"
 ##############################################################################
@@ -120,7 +120,7 @@ def is_bottom(point1, point2):
     
 def find_hole_positions(points):
     if (len(points)==1):
-        return ([-1])
+        return ([100])
     hps=[]
     hp = 0
     tl = points[0][0]
@@ -383,6 +383,7 @@ for i in range(len(onlyfiles)):
     else:
         print ("error in reading")
         break
+    img = cv2.resize(img,(int(128),int(128)))
     (thresh, img_margin) = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)  
     [rowlen, collen]=img_margin.shape
     vflag=np.full((rowlen, collen), 0)
