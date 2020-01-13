@@ -74,8 +74,31 @@ def generate_matrix(img_array, window_size):
         i+=window_size
     return(matrix)
 
+def get_boundaries(image):
+    start=end=0
+    w,h = image.shape
+    for i in range(w):
+        row=image[i]
+        if (np.count_nonzero(row)!=h):
+            start=i;
+            break;
+        
+    for j in range(w-1, start, -1):
+        row=image[j]
+        if (np.count_nonzero(row)!=h):
+            end=j
+            break;
+            
+    return [start, end]    
 
-def draw_box(img_name):
+def draw_box(image_name):
+    top,bottom=get_boundaries(image_name)
+    left,right=get_boundaries(image_name.T)
+    cropped = image_name[top: bottom, left: right]
+    return (cropped)
+
+
+def draw_box_old(img_name):
     img_bw=img_name
     i=0
     prev_count=0
@@ -154,7 +177,7 @@ def draw_box(img_name):
     new_arr=new_arr[top:bottom+1,:].T
     return (new_arr)
 
-def process_images(image1, image2, img_size, win_size):
+def process_images1(image1, image2, img_size, win_size):
     img1=cv2.imread(image1,0)
     img2=cv2.imread(image2,0)
 
@@ -206,9 +229,10 @@ def get_only_filename(filename):
     return (f1[:-4])
 
 def process_images(image1, image2, diff_type):
+    print_flag=False
     diff_list=[]
     win_sizes=[3,4,5,7,10,15,20,30,40,50]
-    #print_windows=[3,5,7,10]
+    print_windows=[3,5,7,10,30,40,50]
     img_sizes_dict= dict([(3,129),(4,128),(5,125),(7,126),(10,150),(15,150),(20,160),(30,150),(40,160),(50,150),(75,150)])
     img1=cv2.imread(image1,cv2.IMREAD_UNCHANGED)
     img2=cv2.imread(image2,0)
@@ -216,7 +240,15 @@ def process_images(image1, image2, diff_type):
     img1=cv2.bitwise_not(alpha)
     nzcount=np.count_nonzero(img1)
     if (nzcount==0):
+        print ("errr img1")
+        sys.exit()
         return (diff_list)
+    
+    if (np.count_nonzero(img2)==0):
+        print ("errr img1")
+        sys.exit()
+        return (diff_list)
+    
 
     if (img1 is not None):
         success=True
@@ -245,34 +277,38 @@ def process_images(image1, image2, diff_type):
         thresh, processed_img1 = cv2.threshold(processed_img1, 127, 255, cv2.THRESH_BINARY)
 
         processed_img2=draw_box(img2)
-        processed_img2 = cv2.resize(processed_img2,(img_size,img_size))
+        w,h=processed_img2.shape
+        if (w == 0 and h==0):
+            return (diff_list)
+        else:
+            processed_img2 = cv2.resize(processed_img2,(img_size,img_size))
         thresh, processed_img2 = cv2.threshold(processed_img2, 127, 255, cv2.THRESH_BINARY)
-
         m1 = generate_matrix(processed_img1, size)
         m2 = generate_matrix(processed_img2, size)
-        #print (m1)
-        #print (m2)
+                       
         if (diff_type==0): #euclidian dist
             dist = np.linalg.norm(m1-m2)
         elif (diff_type==1):
             dist = np.count_nonzero(m1!=m2)
         diff_list.append(dist)
-        '''
-        extracted_filename1 = get_only_filename(image1)
-        extracted_filename2 = get_only_filename(image2)
-        outf1=output_folder+"/StylusGridImage/"
-        outf2=output_folder+"/TrajectoryGridImage/"
-        extracted_filename1 = outf1 + extracted_filename1
-        extracted_filename2 = outf2 + extracted_filename2
-        if (size in print_windows):
-            draw_grids(processed_img1, size, extracted_filename1)
-            draw_grids(processed_img2, size, extracted_filename2)
-        '''
+        
+        if (print_flag):        
+            extracted_filename1 = get_only_filename(image1)
+            extracted_filename2 = get_only_filename(image2)
+            outf1="/home/user/Documents/MTP/Images/1FreeFormResults/Output/GridImages/Stylus/"
+            outf2="/home/user/Documents/MTP/Images/1FreeFormResults/Output/GridImages/Traj1/"
+            extracted_filename1 = outf1 + extracted_filename1
+            extracted_filename2 = outf2 + extracted_filename2
+            if (size in print_windows):
+                draw_grids(processed_img1, size, extracted_filename1)
+                draw_grids(processed_img2, size, extracted_filename2)
+            
     return (diff_list)
 
 
 
-for user_index in range(10):
+for u in range(10):
+    user_index = u
     process_index=2
     input_folder = stylus_data_common + "/" + users[user_index]
     input_folder1 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[0]
@@ -282,6 +318,7 @@ for user_index in range(10):
     output_file = out_common + "/" + methods[process_index] + "/"+users[user_index] + ".csv"
     file_to_write = open(output_file, 'w') 
     count=0
+
     onlyfiles = [f for f in listdir(input_folder) if isfile(join(input_folder, f)) and f.endswith(".png")]
     for el in onlyfiles:
         start_str= el.split("_")
