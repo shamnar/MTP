@@ -232,7 +232,7 @@ def process_images(image1, image2, diff_type):
     print_flag=False
     diff_list=[]
     win_sizes=[3,4,5,7,10,15,20,30,40,50]
-    print_windows=[3,5,7,10,30,40,50]
+    print_windows=[3,5,7,10,15,20,30,40,50]
     img_sizes_dict= dict([(3,129),(4,128),(5,125),(7,126),(10,150),(15,150),(20,160),(30,150),(40,160),(50,150),(75,150)])
     img1=cv2.imread(image1,cv2.IMREAD_UNCHANGED)
     img2=cv2.imread(image2,0)
@@ -295,8 +295,8 @@ def process_images(image1, image2, diff_type):
         if (print_flag):        
             extracted_filename1 = get_only_filename(image1)
             extracted_filename2 = get_only_filename(image2)
-            outf1="/home/user/Documents/MTP/Images/1FreeFormResults/Output/GridImages/Stylus/"
-            outf2="/home/user/Documents/MTP/Images/1FreeFormResults/Output/GridImages/Traj1/"
+            outf1="/home/user/Documents/MTP/Images/1FreeFormResults/Output/GridImages/"
+            outf2="/home/user/Documents/MTP/Images/1FreeFormResults/Output/GridImages/"
             extracted_filename1 = outf1 + extracted_filename1
             extracted_filename2 = outf2 + extracted_filename2
             if (size in print_windows):
@@ -309,68 +309,72 @@ def process_images(image1, image2, diff_type):
 
 for u in range(10):
     user_index = u
-    process_index=2
-    input_folder = stylus_data_common + "/" + users[user_index]
-    input_folder1 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[0]
-    input_folder2 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[1]
-    input_folder3 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[2]
-    input_folder4 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[3]
-    output_file = out_common + "/" + methods[process_index] + "/"+users[user_index] + ".csv"
-    file_to_write = open(output_file, 'w') 
-    count=0
-
-    onlyfiles = [f for f in listdir(input_folder) if isfile(join(input_folder, f)) and f.endswith(".png")]
-    for el in onlyfiles:
-        start_str= el.split("_")
-        end_str = start_str[1].split(".")
-        substr=start_str[0]+"To"+end_str[0]+".png"
-        matching_files1=[]
-        matching_files2=[]
-        matching_files3=[]
-        matching_files4=[]
-        if (path.exists(input_folder1)):
-            matching_files1 = [f for f in listdir(input_folder1) if isfile(join(input_folder1, f)) and f.endswith(substr)]
-        if (path.exists(input_folder2)):
-            matching_files2 = [f for f in listdir(input_folder2) if isfile(join(input_folder2, f)) and f.endswith(substr)]
-        if (path.exists(input_folder3)):
-            matching_files3 = [f for f in listdir(input_folder3) if isfile(join(input_folder3, f)) and f.endswith(substr)]
-        if (path.exists(input_folder4)):
-            matching_files4 = [f for f in listdir(input_folder4) if isfile(join(input_folder4, f)) and f.endswith(substr)]
-        found=0
+    for p in range(3):
+        process_index=p
+        input_folder = stylus_data_common + "/" + users[user_index]
+        input_folder1 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[0]
+        input_folder2 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[1]
+        input_folder3 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[2]
+        input_folder4 = traj_common + "/" + methods[process_index]+"/"+users[user_index]+"/"+types[3]
+        output_file = out_common + "/" + methods[process_index] + "/"+users[user_index] + ".csv"
+        file_to_write = open(output_file, 'w') 
+        count=0
+    
+        onlyfiles = [f for f in listdir(input_folder) if isfile(join(input_folder, f)) and f.endswith(".png")]
+        for el in onlyfiles:
+            start_str= el.split("_")
+            end_str = start_str[1].split(".")
+            if (process_index==0):
+                substr=start_str[0]+"To"+end_str[0]+"F.png"
+            else:
+                substr=start_str[0]+"To"+end_str[0]+".png"
+            matching_files1=[]
+            matching_files2=[]
+            matching_files3=[]
+            matching_files4=[]
+            if (path.exists(input_folder1)):
+                matching_files1 = [f for f in listdir(input_folder1) if isfile(join(input_folder1, f)) and f.endswith(substr)]
+            if (path.exists(input_folder2)):
+                matching_files2 = [f for f in listdir(input_folder2) if isfile(join(input_folder2, f)) and f.endswith(substr)]
+            if (path.exists(input_folder3)):
+                matching_files3 = [f for f in listdir(input_folder3) if isfile(join(input_folder3, f)) and f.endswith(substr)]
+            if (path.exists(input_folder4)):
+                matching_files4 = [f for f in listdir(input_folder4) if isfile(join(input_folder4, f)) and f.endswith(substr)]
+            found=0
+            
+            el1=""
+            if (len(matching_files1)>0):
+                filename2=input_folder1+"/"+matching_files1[0]
+                el1=matching_files1[0]
+                found=1
+            elif (len(matching_files2)>0):
+                filename2=input_folder2+"/"+matching_files2[0]
+                el1=matching_files2[0]
+                found=1
+            elif (len(matching_files3)>0):
+                filename2=input_folder3+"/"+matching_files3[0]
+                el1=matching_files3[0]
+                found=1
+            elif (len(matching_files4)>0):
+                filename2=input_folder4+"/"+matching_files4[0]
+                el1=matching_files4[0]
+                found=1
+            
+            if (found==1):
+                count+=1
+                filename1=input_folder+"/"+el
+                difflist=process_images(filename1, filename2,1)        
+                strlist= ', '.join(map(str,difflist))
+                str_combined=el+","+el1+','+strlist
+                print(str_combined, file = file_to_write)
+                print(count, strlist)
+                
+        if (count==133):
+            print ("Ok " + str(user_index) + "  " + str(process_index))
+        else:
+            print ("Not Ok" + str(user_index) + "  " + str(process_index))
         
-        el1=""
-        if (len(matching_files1)>0):
-            filename2=input_folder1+"/"+matching_files1[0]
-            el1=matching_files1[0]
-            found=1
-        elif (len(matching_files2)>0):
-            filename2=input_folder2+"/"+matching_files2[0]
-            el1=matching_files2[0]
-            found=1
-        elif (len(matching_files3)>0):
-            filename2=input_folder3+"/"+matching_files3[0]
-            el1=matching_files3[0]
-            found=1
-        elif (len(matching_files4)>0):
-            filename2=input_folder4+"/"+matching_files4[0]
-            el1=matching_files4[0]
-            found=1
-        
-        if (found==1):
-            count+=1
-            filename1=input_folder+"/"+el
-            difflist=process_images(filename1, filename2,1)        
-            strlist= ', '.join(map(str,difflist))
-            str_combined=el+","+el1+','+strlist
-            print(str_combined, file = file_to_write)
-            print(count,strlist)
-    if (count==133):
-        print ("Ok" + str(user_index))
-    else:
-        print ("Not Ok" + str(user_index))
-    file_to_write.close() 
-
-
+        file_to_write.close() 
 
 
 
